@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anima2B Artist Lookup</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #0066ff;
+    --accent2: #00ccff;
+    --light: #e8f0ff;
+    --white: #ffffff;
+    --dark: #080c18;
+    --mid: #3a4a7a;
+    --border: #c0cce8;
+    --bg: #f0f4ff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg);
+    color: var(--dark);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Y2K grid dot background */
+  body {
+    background-image:
+      radial-gradient(circle, rgba(0,102,255,0.12) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Top pixel bar */
+  .pixel-bar {
+    position: fixed;
+    top: 0; left: 0; width: 100%;
+    z-index: 10;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, var(--accent) 100%);
+  }
+  .pixel-bar-bottom {
+    position: fixed;
+    bottom: 0; left: 0; width: 100%;
+    z-index: 10;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent2) 0%, var(--accent) 50%, var(--accent2) 100%);
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.015) 3px,
+      rgba(0,0,0,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px 80px;
+  }
+
+  /* Top rule */
+  .top-rule {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .top-rule-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .top-rule-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    transform: rotate(45deg);
+    flex-shrink: 0;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+    max-width: 680px;
+    width: 100%;
+  }
+
+  .tagline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: clamp(2rem, 7vw, 3.6rem);
+    line-height: 1;
+    color: var(--dark);
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--mid);
+    margin-top: 12px;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* Card */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 0 0 1px rgba(0,102,255,0.08), 4px 4px 24px rgba(0,102,255,0.07);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Y2K corner accent */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent2) 0%, transparent 60%);
+    opacity: 0.2;
+  }
+
+  .card > * { position: relative; z-index: 1; }
+
+  .input-label {
+    display: block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 10px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .input-wrap {
+    flex: 1;
+    position: relative;
+  }
+
+  .at-prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--accent);
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px 12px 30px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    color: var(--dark);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,102,255,0.15);
+  }
+
+  .check-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 12px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .check-btn:hover {
+    background: #0052cc;
+  }
+
+  .check-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Result */
+  .result {
+    margin-top: 24px;
+    padding: 20px 22px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    display: none;
+    animation: fade-in 0.2s ease;
+    position: relative;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result.found {
+    background: #f0f6ff;
+    border-color: var(--accent);
+    border-left: 3px solid var(--accent);
+  }
+
+  .result.not-found {
+    background: #f8f8fa;
+    border-color: #ccc;
+    border-left: 3px solid #ccc;
+  }
+
+  .result-icon {
+    font-size: 14px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--mid);
+    margin-bottom: 6px;
+    letter-spacing: 0.1em;
+  }
+
+  .result-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+
+  .result.found .result-title { color: var(--accent); }
+  .result.not-found .result-title { color: #555; }
+
+  .result-msg {
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--dark);
+  }
+
+  .result-replication {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--mid);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 32px 0 18px;
+    color: #c0cce8;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Counter */
+  .counter {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: #9aabcc;
+    letter-spacing: 0.08em;
+  }
+  .counter strong {
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  /* Footer deco */
+  .footer-deco {
+    margin-top: 48px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    opacity: 0.4;
+  }
+  .footer-deco-line {
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .footer-deco-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--mid);
+  }
+
+  /* Nav */
+  .nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px;
+    background: var(--white);
+  }
+  .nav-btn {
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 7px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    color: var(--mid);
+  }
+  .nav-btn:hover {
+    background: var(--bg);
+    color: var(--dark);
+  }
+  .nav-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* About page */
+  .about-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 0 0 1px rgba(0,102,255,0.08), 4px 4px 24px rgba(0,102,255,0.07);
+    animation: fade-in 0.2s ease;
+  }
+
+  .about-section {
+    margin-bottom: 28px;
+  }
+  .about-section:last-child { margin-bottom: 0; }
+
+  .about-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .about-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .about-text {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--dark);
+    font-weight: 300;
+  }
+
+  .about-link {
+    color: var(--accent);
+    font-weight: 700;
+    word-break: break-all;
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent2);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+  }
+  .about-link:hover { border-bottom-color: var(--accent); }
+
+  .contact-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--mid);
+    margin-top: 6px;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .contact-pill:hover { background: var(--light); border-color: var(--accent2); }
+
+  .disclaimer-box {
+    background: #fffef0;
+    border: 1px solid #e0d080;
+    border-left: 3px solid #ccaa00;
+    border-radius: 3px;
+    padding: 16px 18px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #4a3c00;
+    font-weight: 300;
+  }
+  .disclaimer-box small {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    opacity: 0.8;
+  }
+
+  .page { display: none; width: 100%; display: flex; flex-direction: column; align-items: center; }
+  .page.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="pixel-bar"></div>
+<div class="pixel-bar-bottom"></div>
+
+<div class="page-wrap">
+
+  <div class="top-rule">
+    <div class="top-rule-line"></div>
+    <div class="top-rule-dot"></div>
+    <div class="top-rule-line"></div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" id="nav-lookup" onclick="showPage('lookup')">[ lookup ]</button>
+    <button class="nav-btn" id="nav-about" onclick="showPage('about')">[ about ]</button>
+  </div>
+
+  <div id="page-lookup" class="page">
+  <header>
+    <div class="tagline">// model transparency tool //</div>
+    <h1>Anima<span>2B</span><br>Artist Lookup</h1>
+    <p class="subtitle">Find out whether your artwork was included in the training data<br>for the <strong>Anima2B Preview</strong> diffusion model.</p>
+  </header>
+
+  <div class="card">
+    <label class="input-label" for="artist-input">// enter artist username</label>
+    <div class="input-row">
+      <div class="input-wrap">
+        <span class="at-prefix">@</span>
+        <input type="text" id="artist-input" placeholder="yourname" autocomplete="off" autocorrect="off" spellcheck="false" />
+      </div>
+      <button class="check-btn" onclick="checkArtist()">SEARCH</button>
+    </div>
+
+    <div id="result" class="result">
+      <div class="result-icon" id="result-icon"></div>
+      <div class="result-title" id="result-title"></div>
+      <div class="result-msg" id="result-msg"></div>
+      <div class="result-replication" id="result-replication"></div>
+    </div>
+
+    <div class="divider">index</div>
+    <div class="counter">
+      <strong>59,676</strong> artists indexed
+    </div>
+  </div>
+
+  </div><!-- end page-lookup -->
+
+  <div id="page-about" class="page hidden">
+    <div class="about-card">
+
+      <div class="about-section">
+        <div class="about-label">what is this</div>
+        <p class="about-text">
+          Anima2B is an AI image model created by <strong>Circlestone Labs</strong> in collaboration with <strong>Comfy Org</strong>, trained on millions of anime and illustration images spanning approximately 59k credited artists. This tool lets you check whether your name appears in that artist index.
+          <br><br>The model in question:
+          <a class="about-link" href="https://huggingface.co/circlestone-labs/Anima" target="_blank" rel="noopener">huggingface.co/circlestone-labs/Anima</a>
+        </p>
+      </div>
+
+      <div class="about-section">
+        <div class="about-label">circlestone labs contact</div>
+        <p class="about-text">for licensing questions or inquiries about the model:</p>
+        <a class="contact-pill" style="display:flex;margin-bottom:8px;">
+		- email: tdrussell1@proton.me
+        </a>
+      </div>
+
+      <div class="about-section">
+        <div class="about-label">comfy org contact</div>
+        <p class="about-text">comfy org is the other team behind this model. their ceo/cofounder is yoland yan. their contact info is here:</p>
+        <a class="contact-pill" href="https://www.linkedin.com/in/yolandyan/" style="display:flex;margin-			bottom:8px;">
+         - their linkedin
+        </a>
+        <a class="contact-pill" style="display:flex;margin-bottom:8px;">
+          - email: hello@comfy.org
+        </a>
+        <a class="contact-pill" style="display:flex;margin-bottom:8px;">
+          - email:  yoland@drip.art  <span style="font-size:11px;opacity:0.7;margin-left:4px;">(yoland yan)</span>
+        </a>
+        <a class="contact-pill" href="https://x.com/yoland_yan" target="_blank" rel="noopener" style="display:flex;">
+          - @yoland_yan on x
+        </a>
+      </div>
+
+      <div class="about-section">
+        <div class="about-label">if your work was used</div>
+        <div class="disclaimer-box">
+          If your name appears in the list, there is unfortunately limited recourse at the moment. Copyright law around AI training data is unsettled and still being actively contested.
+          <br><br>
+          However, what you can do right now is document everything: screenshot the model page, save the artist index, note the date. Connecting with other artists in the same situation amplifies the conversation considerably. Check with legal specialists that focus on art copyright, and spread the word.
+          <br><br>
+          Organizations focused on artist rights, including Netbloc and others, have been collecting this kind of documentation. You are not navigating this alone.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-deco">
+    <div class="footer-deco-line"></div>
+    <span class="footer-deco-text">ANIMA2B TRANSPARENCY</span>
+    <div class="footer-deco-line"></div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+let ARTIST_ENTRIES = [];
+let LOOKUP = new Map();
+let TOTAL_LINES = 0;
+
+fetch('artists.txt')
+  .then(r => r.text())
+  .then(text => {
+    const lines = text.split('\n');
+    TOTAL_LINES = lines.filter(l => l.trim().length > 0).length;
+    let lineNum = 0;
+    lines.forEach(l => {
+      const normalized = l.trim()
+        .replace(/^@+/, '')
+        .replace(/\\\(/g, '(')
+        .replace(/\\\)/g, ')')
+        .replace(/\\\\/g, '')
+        .toLowerCase();
+      if (!normalized) return;
+      lineNum++;
+
+      const bracketMatch = normalized.match(/^(.+?)\s*\((.+)\)\s*$/);
+      const full = normalized;
+      const preBracket = bracketMatch ? bracketMatch[1].trim() : null;
+      const inBracket  = bracketMatch ? bracketMatch[2].trim() : null;
+
+      const entry = { full, preBracket, inBracket, lineNum };
+      ARTIST_ENTRIES.push(entry);
+
+      if (!LOOKUP.has(full)) LOOKUP.set(full, lineNum);
+      if (preBracket && !LOOKUP.has(preBracket)) LOOKUP.set(preBracket, lineNum);
+      if (inBracket && !LOOKUP.has(inBracket)) LOOKUP.set(inBracket, lineNum);
+    });
+  })
+  .catch(() => console.error('Could not load artists.txt'));
+
+function checkArtist() {
+  const raw = document.getElementById('artist-input').value.trim();
+  const query = raw.replace(/^@+/, '').toLowerCase();
+
+  const resultEl = document.getElementById('result');
+  const iconEl = document.getElementById('result-icon');
+  const titleEl = document.getElementById('result-title');
+  const msgEl = document.getElementById('result-msg');
+  const replEl = document.getElementById('result-replication');
+
+  if (!query) {
+    resultEl.style.display = 'none';
+    return;
+  }
+
+  const lineNumber = LOOKUP.get(query);
+  const found = lineNumber !== undefined;
+
+  resultEl.style.display = 'none';
+  resultEl.offsetHeight;
+  resultEl.style.display = 'block';
+
+  if (found) {
+    resultEl.className = 'result found';
+    iconEl.textContent = '// match found';
+    titleEl.textContent = 'Found in the index';
+    msgEl.innerHTML = 'Your work was included in the training data for the <strong>Anima2B Preview</strong> model. <a href="#" onclick="showPage(\'about\');return false;" style="color:var(--accent);font-weight:700;text-decoration:underline;">See what you should know.</a>';
+
+    let replMsg = '';
+    if (lineNumber < 40000) {
+      replMsg = 'Your style is likely replicable with high accuracy by the model.';
+    } else if (lineNumber > 50000) {
+      replMsg = 'The model may not replicate your style particularly well — though this does not mean your work was not used as training data.';
+    } else {
+      replMsg = 'The model may reproduce your style with partial accuracy. Results may vary, but this does not mean your work was not used as training data.';
+    }
+
+    replEl.innerHTML = replMsg + '<br><span style="opacity:0.65;margin-top:6px;display:inline-block;">Index position: #' + lineNumber.toLocaleString() + ' of ' + TOTAL_LINES.toLocaleString() + ' — your rank within the dataset. The closer the number is to 59,676, the fewer samples of your work are present.</span>';
+    replEl.style.display = 'block';
+  } else {
+    resultEl.className = 'result not-found';
+    iconEl.textContent = '// no match';
+    titleEl.textContent = 'Not found';
+    msgEl.innerHTML = 'Your work was likely <strong>not</strong> included in the training data.';
+    replEl.style.display = 'none';
+    replEl.innerHTML = '';
+  }
+}
+
+document.getElementById('artist-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkArtist();
+});
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  if (page) page.classList.remove('hidden');
+  const btn = document.getElementById('nav-' + name);
+  if (btn) btn.classList.add('active');
+}
+</script>
+</body>
+</html>
